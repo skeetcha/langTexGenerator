@@ -1,0 +1,149 @@
+{
+    "$schema": "https://json-schema.org/draft/2019-09/schema#",
+    "$id": "http://skeetcha.github.com/langTexSchema.json",
+    "title": "Language",
+    "description": "A schema for defining a language for my LangToTex converter",
+    "type": "object",
+    "properties": {
+        "documentTitle": {
+            "description": "The title of the document",
+            "type": "string"
+        },
+        "documentSubtitle": {
+            "description": "The subtitle of the document",
+            "type": "string"
+        },
+        "author": {
+            "description": "The author of the document",
+            "type": "string"
+        },
+        "langs": {
+            "description": "The list of language objects",
+            "type": "array",
+            "items": {
+                "type": "object",
+                "properties": {
+                    "name": {
+                        "description": "The autonym of the language",
+                        "type": "string"
+                    },
+                    "engName": {
+                        "description": "The English name of the language",
+                        "type": "string"
+                    },
+                    "dictionary": {
+                        "description": "The list of words in the language",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "word": {
+                                    "description": "The word in the language",
+                                    "type": "string"
+                                },
+                                "pronunciation": {
+                                    "description": "The pronunciation of the word using X-SAMPA",
+                                    "type": "string"
+                                },
+                                "entry": {
+                                    "description": "Information about the entry",
+                                    "type": "object",
+                                    "properties": {
+                                        "tos": {
+                                            "description": "The type of speech of the word",
+                                            "type": "string"
+                                        },
+                                        "definition": {
+                                            "description": "The definition of the word",
+                                            "type": "string"
+                                        },
+                                        "engTrans": {
+                                            "description": "The best English translation of the word",
+                                            "type": "string"
+                                        },
+                                        "references": {
+                                            "description": "Any references for the word",
+                                            "type": "string"
+                                        },
+                                        "crossrefs": {
+                                            "description": "Words to cross-reference for this word",
+                                            "type": "string"
+                                        },
+                                        "tables": {
+                                            "description": "The tables that this word uses",
+                                            "type": "array",
+                                            "items": {
+                                                "type": "string"
+                                            }
+                                        }
+                                    },
+                                    "required": [
+                                        "tos",
+                                        "definition",
+                                        "engTrans"
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "word",
+                                "pronunciation",
+                                "entry"
+                            ]
+                        }
+                    },
+                    "tables": {
+                        "description": "The grammar tables of the language",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "description": "The name of the table",
+                                    "type": "string"
+                                },
+                                "id": {
+                                    "description": "The ID of the table; this is used in word entries",
+                                    "type": "string"
+                                },
+                                "colLabels": {
+                                    "description": "The labels of the columns in the table",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "rowLabels": {
+                                    "description": "The labels of the rows in the table",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "string"
+                                    }
+                                },
+                                "rows": {
+                                    "description": "The data inside of the table separated by rows first and then columns",
+                                    "type": "array",
+                                    "items": {
+                                        "type": "array",
+                                        "items": {
+                                            "type": "string"
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                },
+                "required": [
+                    "name",
+                    "engName",
+                    "dictionary",
+                    "tables"
+                ]
+            }
+        }
+    },
+    "required": [
+        "documentTitle",
+        "langs"
+    ]
+}
