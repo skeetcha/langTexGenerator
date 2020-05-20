@@ -2,7 +2,7 @@ CC=g++
 CFLAGS=-O3 -c -Wall -std=c++11
 OBJECTS=main.obj
 HEADERS=
-INCLUDEDIRS=
+INCLUDEDIRS=-Irapidjson/include
 LIBDIRS=
 LIBS=
 EXECUTABLE=build/langTexGenerator.exe
