@@ -31,6 +31,27 @@
                         "description": "The English name of the language",
                         "type": "string"
                     },
+                    "abbrevs": {
+                        "description": "The abbreviations used by the dictionary",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "abbrev": {
+                                    "description": "The abbreviation",
+                                    "type": "string"
+                                },
+                                "long": {
+                                    "description": "The long version of the abbreviation",
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "abbrev",
+                                "long"
+                            ]
+                        }
+                    },
                     "dictionary": {
                         "description": "The list of words in the language",
                         "type": "array",
@@ -45,43 +66,46 @@
                                     "description": "The pronunciation of the word using X-SAMPA",
                                     "type": "string"
                                 },
-                                "entry": {
+                                "entries": {
                                     "description": "Information about the entry",
-                                    "type": "object",
-                                    "properties": {
-                                        "tos": {
-                                            "description": "The type of speech of the word",
-                                            "type": "string"
-                                        },
-                                        "definition": {
-                                            "description": "The definition of the word",
-                                            "type": "string"
-                                        },
-                                        "engTrans": {
-                                            "description": "The best English translation of the word",
-                                            "type": "string"
-                                        },
-                                        "references": {
-                                            "description": "Any references for the word",
-                                            "type": "string"
-                                        },
-                                        "crossrefs": {
-                                            "description": "Words to cross-reference for this word",
-                                            "type": "string"
-                                        },
-                                        "tables": {
-                                            "description": "The tables that this word uses",
-                                            "type": "array",
-                                            "items": {
+                                    "type": "array",
+                                    "items": {
+                                        "type": "object",
+                                        "properties": {
+                                            "tos": {
+                                                "description": "The type of speech of the word",
                                                 "type": "string"
+                                            },
+                                            "definition": {
+                                                "description": "The definition of the word",
+                                                "type": "string"
+                                            },
+                                            "engTrans": {
+                                                "description": "The best English translation of the word",
+                                                "type": "string"
+                                            },
+                                            "references": {
+                                                "description": "Any references for the word",
+                                                "type": "string"
+                                            },
+                                            "crossrefs": {
+                                                "description": "Words to cross-reference for this word",
+                                                "type": "string"
+                                            },
+                                            "tables": {
+                                                "description": "The tables that this word uses",
+                                                "type": "array",
+                                                "items": {
+                                                    "type": "string"
+                                                }
                                             }
-                                        }
-                                    },
-                                    "required": [
-                                        "tos",
-                                        "definition",
-                                        "engTrans"
-                                    ]
+                                        },
+                                        "required": [
+                                            "tos",
+                                            "definition",
+                                            "engTrans"
+                                        ]
+                                    }
                                 }
                             },
                             "required": [
@@ -119,6 +143,10 @@
                                         "type": "string"
                                     }
                                 },
+                                "colStyles": {
+                                    "description": "The styles of each column in the table",
+                                    "type": "string"
+                                },
                                 "rows": {
                                     "description": "The data inside of the table separated by rows first and then columns",
                                     "type": "array",
@@ -129,13 +157,21 @@
                                         }
                                     }
                                 }
-                            }
+                            },
+                            "required": [
+                                "name",
+                                "id",
+                                "colLabels",
+                                "rowLabels",
+                                "rows"
+                            ]
                         }
                     }
                 },
                 "required": [
                     "name",
                     "engName",
+                    "abbrevs",
                     "dictionary",
                     "tables"
                 ]
