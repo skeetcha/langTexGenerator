@@ -33,3 +33,11 @@
 
 # VSCode
 .vscode/
+
+# Latex Files
+*.tex
+*.synctex.gz
+*.pdf
+
+# Language Files
+*.lang.json
