@@ -111,7 +111,7 @@
                             "required": [
                                 "word",
                                 "pronunciation",
-                                "entry"
+                                "entries"
                             ]
                         }
                     },
