@@ -46,6 +46,23 @@ string numToString(int i)
     }
 }
 
+template <typename TKey, typename TVal>
+vector<pair<TKey, TVal>> sortMapByKey(map<TKey, TVal>& dict)
+{
+    vector<pair<TKey, TVal>> vec;
+
+    for (typename map<TKey, TVal>::iterator it = dict.begin(); it != dict.end(); it++)
+    {
+        vec.push_back(pair<TKey, TVal>(it->first, it->second));
+    }
+
+    sort(vec.begin(), vec.end(), [](const pair<TKey, TVal>& a, const pair<TKey, TVal>& b)->bool {
+        return a.first < b.first;
+    });
+
+    return vec;
+}
+
 string parseLangData(Document& doc)
 {
     string beginning = "\\documentclass[12pt]{article}\n\\usepackage{fullpage}\\usepackage{color}\n\n\\newcommand{\\entry}[7]{\\markboth{#1}{#1}\\textbf{#1} \\ \\textipa{#2}\\ \\textsuperscript{1}\\textsc{#3}. \\ {#4}\\ \\textit{#5}\\ see also: \\textit{#6}. \\ {#7}}\n\\newcommand{\\entrytwo}[5]{; \\textsuperscript{2}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrythree}[5]{; \\textsuperscript{3}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfour}[5]{; \\textsuperscript{4}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfive}[5]{; \\textsuperscript{5}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrysix}[5]{; \\textsuperscript{6}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\phrase}[3]{; \\textbf{#1} \\ {#2} \\textit{#3}}\n\\newcommand{\\note}[1]{; \\textbf{note}: {#1}}\n\\newcommand{\\sentence}[2]{\\textsuperscript{#1}{#2}}\n\n\\usepackage{vowel}\n\n\\usepackage{hyperref}\n\\hypersetup{\n\tcolorlinks=true,\n\tlinkcolor=blue,\n\tfilecolor=magenta,\n\turlcolor=cyan,\n}\n\n\\usepackage{tipa}\n\n\\usepackage{graphicx}\n\n\\usepackage{amssymb}\n\\let\\oldemptyset\\emptyset\n\\let\\emptyset\\varnothing\n\n\\usepackage{multicol}\n\n\\usepackage{expex}\n\n\\setlength{\\parindent}{0cm}\n\n\\usepackage{microtype}\n\n";
@@ -110,7 +127,7 @@ string parseLangData(Document& doc)
             entries.push_back(entry);
         }
 
-        sort(entries.begin(), entries.end(), [](DictEntry& a, DictEntry& b)->bool {
+        sort(entries.begin(), entries.end(), [](const DictEntry& a, const DictEntry& b)->bool {
             return a.word < b.word;
         });
 
@@ -129,7 +146,7 @@ string parseLangData(Document& doc)
             langString += ("\t\t\t\t\t\\entry{" + deIter->word + "}{[" + deIter->pronunciaton + "]}{" + deIter->entries[0].tos + "}{" + deIter->entries[0].definition + "}{" + deIter->entries[0].references + "}{" + deIter->entries[0].crossrefs + "}{\\ref{tab:" + deIter->entries[0].tables + "}} ");
             engToLang.insert(pair<string, pair<string, string>>(deIter->entries[0].engTrans, pair<string, string>(deIter->word, deIter->entries[0].tos)));
 
-            for (int i = 1; i < deIter->entries.size(); i++)
+            for (int i = 1; i < (int)deIter->entries.size(); i++)
             {
                 string num = numToString(i);
                 langString += ("\\entry" + num + " {" + deIter->entries[i].tos + "}{" + deIter->entries[i].definition + "}{" + deIter->entries[i].references + "}{" + deIter->entries[i].crossrefs + "}{\\ref{tab:" + deIter->entries[i].tables + "}} ");
@@ -141,11 +158,9 @@ string parseLangData(Document& doc)
 
         langString += ("\t\t\t\\end{multicols}\n\t\t\\newpage\n\t\t\\subsection{English-" + name + " Dictionary}\n\t\t\t\\begin{multicols}{2}\n");
         currentStartingChar = '\0';
-        sort(engToLang.begin(), engToLang.end(), [](map<string, pair<string, string>>::iterator& a, map<string, pair<string, string>>::iterator& b)->bool {
-            return a->first < b->first;
-        });
+        vector<pair<string, pair<string, string>>> engToLangSorted = sortMapByKey<string, pair<string, string>>(engToLang);
 
-        for (map<string, pair<string, string>>::iterator etlIter = engToLang.begin(); etlIter != engToLang.end(); etlIter++)
+        for (vector<pair<string, pair<string, string>>>::iterator etlIter = engToLangSorted.begin(); etlIter != engToLangSorted.end(); etlIter++)
         {
             if (etlIter->first[0] != currentStartingChar)
             {
@@ -199,7 +214,7 @@ string parseLangData(Document& doc)
                     langString += (" & " + data);
                 }
 
-                if (i < rowLabels.size())
+                if (i < (int)rowLabels.size())
                 {
                     langString += " \\\\ \\hline\n";
                 }
@@ -242,6 +257,7 @@ int main(int argc, char* argv[])
         {
             if (filename.substr(filename.find_last_of('.')) == ".json")
             {
+                cout << "Converting file..." << endl;
                 string data, line;
                 ifstream file(filename);
 
@@ -269,6 +285,7 @@ int main(int argc, char* argv[])
                         return 1;
                     }
 
+                    cout << "Done." << endl;
                     return 0;
                 }
                 else
