@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-O3 -c -Wall -std=c++11
+CFLAGS=-c -Wall -std=c++11
 OBJECTS=main.obj
 HEADERS=
 INCLUDEDIRS=-Irapidjson/include
