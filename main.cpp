@@ -15,7 +15,7 @@ struct WordEntry
     string engTrans;
     string references;
     string crossrefs;
-    string tables;
+    vector<string> tables;
 };
 
 struct DictEntry
@@ -65,13 +65,22 @@ vector<pair<TKey, TVal>> sortMapByKey(map<TKey, TVal>& dict)
 
 string parseLangData(Document& doc)
 {
-    string beginning = "\\documentclass[12pt]{article}\n\\usepackage{fullpage}\\usepackage{color}\n\n\\newcommand{\\entry}[7]{\\markboth{#1}{#1}\\textbf{#1} \\ \\textipa{#2}\\ \\textsuperscript{1}\\textsc{#3}. \\ {#4}\\ \\textit{#5}\\ see also: \\textit{#6}. \\ {#7}}\n\\newcommand{\\entrytwo}[5]{; \\textsuperscript{2}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrythree}[5]{; \\textsuperscript{3}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfour}[5]{; \\textsuperscript{4}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfive}[5]{; \\textsuperscript{5}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrysix}[5]{; \\textsuperscript{6}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\phrase}[3]{; \\textbf{#1} \\ {#2} \\textit{#3}}\n\\newcommand{\\note}[1]{; \\textbf{note}: {#1}}\n\\newcommand{\\sentence}[2]{\\textsuperscript{#1}{#2}}\n\n\\usepackage{vowel}\n\n\\usepackage{hyperref}\n\\hypersetup{\n\tcolorlinks=true,\n\tlinkcolor=blue,\n\tfilecolor=magenta,\n\turlcolor=cyan,\n}\n\n\\usepackage{tipa}\n\n\\usepackage{graphicx}\n\n\\usepackage{amssymb}\n\\let\\oldemptyset\\emptyset\n\\let\\emptyset\\varnothing\n\n\\usepackage{multicol}\n\n\\usepackage{expex}\n\n\\setlength{\\parindent}{0cm}\n\n\\usepackage{microtype}\n\n";
+    string beginning = "\\documentclass[12pt]{article}\n\\usepackage{fullpage}\n\\usepackage{color}\n\n\\newcommand{\\entry}[7]{\\markboth{#1}{#1}\\textbf{#1} \\ \\textipa{#2}\\ \\textsuperscript{1}\\textsc{#3}. \\ {#4}\\ \\textit{#5}\\ see also: \\textit{#6}. \\ {#7}}\n\\newcommand{\\entrytwo}[5]{; \\textsuperscript{2}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrythree}[5]{; \\textsuperscript{3}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfour}[5]{; \\textsuperscript{4}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfive}[5]{; \\textsuperscript{5}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrysix}[5]{; \\textsuperscript{6}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\phrase}[3]{; \\textbf{#1} \\ {#2} \\textit{#3}}\n\\newcommand{\\note}[1]{; \\textbf{note}: {#1}}\n\\newcommand{\\sentence}[2]{\\textsuperscript{#1}{#2}}\n\n\\usepackage{vowel}\n\n\\usepackage{hyperref}\n\\hypersetup{\n\tcolorlinks=true,\n\tlinkcolor=blue,\n\tfilecolor=magenta,\n\turlcolor=cyan,\n}\n\n\\usepackage{tipa}\n\n\\usepackage{graphicx}\n\n\\usepackage{amssymb}\n\\let\\oldemptyset\\emptyset\n\\let\\emptyset\\varnothing\n\n\\usepackage{multicol}\n\n\\usepackage{expex}\n\n\\setlength{\\parindent}{0cm}\n\n\\usepackage{microtype}\n\n";
 
     string documentTitle = doc["documentTitle"].GetString();
-    string documentSubtitle = doc["documentSubtitle"].GetString();
-    string documentAuthor = doc["author"].GetString();
+    string documentSubtitle = "", documentAuthor = "";
 
-    string preamble = "\\title{\n\t" + documentTitle + "\\\n\t\\large " + documentSubtitle + "}\n\\author{" + documentAuthor + "}\n\n";
+    if (doc.HasMember("documentSubtitle"))
+    {
+        documentSubtitle = doc["documentSubtitle"].GetString();
+    }
+
+    if (doc.HasMember("author"))
+    {
+        documentAuthor = doc["author"].GetString();
+    }
+
+    string preamble = "\\title{\n\t" + documentTitle + "\\\\\n\t\\large " + documentSubtitle + "}\n\\author{" + documentAuthor + "}\n\n";
 
     GenericArray<false, rapidjson::Value> langs = doc["langs"].GetArray();
     string docBegin = "\\begin{document}\n\t\\pagenumbering{gobble}\n\t\\maketitle\n\t\\newpage\n\n\t\\pagenumbering{roman}\n\t\\tableofcontents\n\t\\newpage\n\n\t\\pagenumbering{arabic}\n";
@@ -96,7 +105,7 @@ string parseLangData(Document& doc)
             langString += ("\t\t\t\t\t\t\\textsc{" + aAbbrev + "} & " + aLong + " \\\\\n");
         }
 
-        langString += ("\t\t\t\t\t\\end{tabular}\n\t\t\t\t\\end{table}\n\t\t\t\\subsubsection{Format of Entries}\n\t\t\t\t\\entry{entry}{[ipa]}{grammar}{definition}{references}{crossrefs}{tables} \\entrytwo{grammar}{definition}{references}{crossrefs}{tables} \\entrythree{grammar}{definition}{references}{crossrefs}{tables} \\entryfour{grammar}{references}{crossrefs}{tables} \\entryfive{grammar}{references}{crossrefs}{tables} \\entrysix{grammar}{references}{crossrefs}{tables} \\phrase{phrase}{definition}{example} \\note{note}\n\t\t\t\\newpage\n\t\t\t\\begin{multicols}{2}\n");
+        langString += ("\t\t\t\t\t\\end{tabular}\n\t\t\t\t\\end{table}\n\t\t\t\\subsubsection{Format of Entries}\n\t\t\t\t\\entry{entry}{[ipa]}{grammar}{definition}{references}{crossrefs}{tables} \\entrytwo{grammar}{definition}{references}{crossrefs}{tables} \\entrythree{grammar}{definition}{references}{crossrefs}{tables} \\entryfour{grammar}{definition}{references}{crossrefs}{tables} \\entryfive{grammar}{definition}{references}{crossrefs}{tables} \\entrysix{grammar}{definition}{references}{crossrefs}{tables} \\phrase{phrase}{definition}{example} \\note{note}\n\t\t\t\\newpage\n\t\t\t\\begin{multicols}{2}\n");
 
         GenericArray<false, rapidjson::Value> dictionary = lang["dictionary"].GetArray();
 
@@ -118,9 +127,35 @@ string parseLangData(Document& doc)
                 wordEntry.tos = wEntry["tos"].GetString();
                 wordEntry.definition = wEntry["definition"].GetString();
                 wordEntry.engTrans = wEntry["engTrans"].GetString();
-                wordEntry.references = wEntry["references"].GetString();
-                wordEntry.crossrefs = wEntry["crossrefs"].GetString();
-                wordEntry.tables = wEntry["tables"].GetString();
+
+                if (wEntry.HasMember("references"))
+                {
+                    wordEntry.references = wEntry["references"].GetString();
+                }
+                else
+                {
+                    wordEntry.references = "";
+                }
+                
+                if (wEntry.HasMember("crossrefs"))
+                {
+                    wordEntry.crossrefs = wEntry["crossrefs"].GetString();
+                }
+                else
+                {
+                    wordEntry.crossrefs = "";
+                }
+                
+                if (wEntry.HasMember("tables"))
+                {
+                    GenericArray<false, rapidjson::Value> wtables = wEntry["tables"].GetArray();
+
+                    for (Value* wtable = wtables.begin(); wtable != wtables.end(); ++wtable)
+                    {
+                        wordEntry.tables.push_back(wtable->GetString());
+                    }
+                }
+                
                 entry.entries.push_back(wordEntry);
             }
 
@@ -138,18 +173,41 @@ string parseLangData(Document& doc)
         {
             if (deIter->word[0] != currentStartingChar)
             {
-                string nsc = "" + deIter->word[0];
-                langString += ("\t\t\t\t\\subsubsection{" + nsc + "}\n");
+                langString += ("\t\t\t\t\\subsubsection{" + string(1, toupper(deIter->word[0])) + "}\n");
                 currentStartingChar = deIter->word[0];
             }
 
-            langString += ("\t\t\t\t\t\\entry{" + deIter->word + "}{[" + deIter->pronunciaton + "]}{" + deIter->entries[0].tos + "}{" + deIter->entries[0].definition + "}{" + deIter->entries[0].references + "}{" + deIter->entries[0].crossrefs + "}{\\ref{tab:" + deIter->entries[0].tables + "}} ");
+            langString += ("\t\t\t\t\t\\entry{" + deIter->word + "}{[" + deIter->pronunciaton + "]}{" + deIter->entries[0].tos + "}{" + deIter->entries[0].definition + "}{" + deIter->entries[0].references + "}{" + deIter->entries[0].crossrefs + "}{");
+
+            for (int i = 0; i < (int)deIter->entries[0].tables.size(); i++)
+            {
+                langString += ("\\ref{tab:" + deIter->entries[0].tables[i] + "}");
+
+                if (i < ((int)deIter->entries[0].tables.size() - 1))
+                {
+                    langString += ",";
+                }
+            }
+
+            langString += "}} ";
             engToLang.insert(pair<string, pair<string, string>>(deIter->entries[0].engTrans, pair<string, string>(deIter->word, deIter->entries[0].tos)));
 
             for (int i = 1; i < (int)deIter->entries.size(); i++)
             {
                 string num = numToString(i);
-                langString += ("\\entry" + num + " {" + deIter->entries[i].tos + "}{" + deIter->entries[i].definition + "}{" + deIter->entries[i].references + "}{" + deIter->entries[i].crossrefs + "}{\\ref{tab:" + deIter->entries[i].tables + "}} ");
+                langString += ("\\entry" + num + " {" + deIter->entries[i].tos + "}{" + deIter->entries[i].definition + "}{" + deIter->entries[i].references + "}{" + deIter->entries[i].crossrefs + "}{");
+
+                for (int j = 0; j < (int)deIter->entries[i].tables.size(); j++)
+                {
+                    langString += ("\\ref{tab:" + deIter->entries[i].tables[j] + "}");
+
+                    if (j < ((int)deIter->entries[i].tables.size() - 1))
+                    {
+                        langString += ",";
+                    }
+                }
+
+                langString += "}} ";
                 engToLang.insert(pair<string, pair<string, string>>(deIter->entries[i].engTrans, pair<string, string>(deIter->word, deIter->entries[i].tos)));
             }
 
@@ -164,12 +222,11 @@ string parseLangData(Document& doc)
         {
             if (etlIter->first[0] != currentStartingChar)
             {
-                string nsc = "" + etlIter->first[0];
-                langString += ("\t\t\t\t\\subsubsection{" + nsc + "}\n");
+                langString += ("\t\t\t\t\\subsubsection{" + string(1, toupper(etlIter->first[0])) + "}\n");
                 currentStartingChar = etlIter->first[0];
             }
 
-            langString += ("\t\t\t\t\t\\entry{" + etlIter->first + "}{}{" + etlIter->second.second + "}{" + etlIter->second.first + "}{}{}{}\n");
+            langString += ("\t\t\t\t\t\\entry{" + etlIter->first + "}{}{" + etlIter->second.second + "}{" + etlIter->second.first + "}{}{}{}\n\n");
         }
 
         langString += ("\t\t\t\\end{multicols}\n\t\t\\newpage\n\t\t\\subsection{Grammar Tables}\n");
@@ -214,14 +271,7 @@ string parseLangData(Document& doc)
                     langString += (" & " + data);
                 }
 
-                if (i < (int)rowLabels.size())
-                {
-                    langString += " \\\\ \\hline\n";
-                }
-                else
-                {
-                    langString += " \\\\\n";
-                }
+                langString += " \\\\\n";
             }
 
             langString += ("\t\t\t\t\t\\end{tabular}\n\t\t\t\t\t\\caption{" + tableName + "}\n\t\t\t\t\t\\label{tab:" + id + "}\n\t\t\t\t\\end{table}\n");
