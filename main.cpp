@@ -189,12 +189,12 @@ string parseLangData(Document& doc)
                 }
             }
 
-            langString += "}} ";
+            langString += "} ";
             engToLang.insert(pair<string, pair<string, string>>(deIter->entries[0].engTrans, pair<string, string>(deIter->word, deIter->entries[0].tos)));
 
             for (int i = 1; i < (int)deIter->entries.size(); i++)
             {
-                string num = numToString(i);
+                string num = numToString(i + 1);
                 langString += ("\\entry" + num + " {" + deIter->entries[i].tos + "}{" + deIter->entries[i].definition + "}{" + deIter->entries[i].references + "}{" + deIter->entries[i].crossrefs + "}{");
 
                 for (int j = 0; j < (int)deIter->entries[i].tables.size(); j++)
@@ -203,11 +203,11 @@ string parseLangData(Document& doc)
 
                     if (j < ((int)deIter->entries[i].tables.size() - 1))
                     {
-                        langString += ",";
+                        langString += ", ";
                     }
                 }
 
-                langString += "}} ";
+                langString += "} ";
                 engToLang.insert(pair<string, pair<string, string>>(deIter->entries[i].engTrans, pair<string, string>(deIter->word, deIter->entries[i].tos)));
             }
 
