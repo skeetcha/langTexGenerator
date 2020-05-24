@@ -1,29 +1,12 @@
-#include <iostream>
+#include <string>
+#include <vector>
+#include <map>
 #include <rapidjson/document.h>
 #include <algorithm>
+#include <iostream>
 #include <fstream>
-#include <vector>
-#include <string>
-#include <map>
 using namespace std;
 using namespace rapidjson;
-
-struct WordEntry
-{
-    string tos;
-    string definition;
-    string engTrans;
-    string references;
-    string crossrefs;
-    vector<string> tables;
-};
-
-struct DictEntry
-{
-    string word;
-    string pronunciaton;
-    vector<WordEntry> entries;
-};
 
 string numToString(int i)
 {
@@ -46,72 +29,734 @@ string numToString(int i)
     }
 }
 
-template <typename TKey, typename TVal>
-vector<pair<TKey, TVal>> sortMapByKey(map<TKey, TVal>& dict)
+struct WordEntry
 {
-    vector<pair<TKey, TVal>> vec;
+    string tos;
+    string definition;
+    string engTrans;
+    string references;
+    string crossrefs;
+    vector<string> tables;
+};
 
-    for (typename map<TKey, TVal>::iterator it = dict.begin(); it != dict.end(); it++)
+struct DictEntry
+{
+    string word;
+    string pronunciaton;
+    vector<WordEntry> entries;
+};
+
+namespace Latex
+{
+    enum DocumentType
     {
-        vec.push_back(pair<TKey, TVal>(it->first, it->second));
+        Article
+    };
+
+    enum FontSizeType
+    {
+        Point,
+        None
+    };
+
+    struct FontSize
+    {
+        int amount;
+        FontSizeType unit;
+
+        FontSize()
+        {
+            amount = -1;
+            unit = FontSizeType::None;
+        }
+    };
+
+    struct LatexCommand
+    {
+        string name;
+        int argNum;
+        vector<string> output;
+
+        LatexCommand(string n, int an, vector<string> o)
+        {
+            name = n;
+            argNum = an;
+            output = o;
+        }
+    };
+
+    enum PageNumberingType
+    {
+        Gobble,
+        Arabic,
+        Roman
+    };
+
+    string markBoth(string first, string second)
+    {
+        string r = "\\markboth{";
+        r += first;
+        r += "}{";
+        r += second;
+        r += "}";
+        return r;
     }
 
-    sort(vec.begin(), vec.end(), [](const pair<TKey, TVal>& a, const pair<TKey, TVal>& b)->bool {
-        return a.first < b.first;
-    });
+    string comArg(int num)
+    {
+        string r = "#";
+        char buffer[3];
+        _itoa_s(num, buffer, (size_t)3, 10);
+        r += buffer;
+        return r;
+    }
 
-    return vec;
+    string boldText(string text)
+    {
+        string r = "\\textbf{";
+        r += text;
+        r += "}";
+        return r;
+    }
+
+    string ipaText(string text)
+    {
+        string r = "\\textipa{";
+        r += text;
+        r += "}";
+        return r;
+    }
+
+    string superScript(string text)
+    {
+        string r = "\\textsuperscript{";
+        r += text;
+        r += "}";
+        return r;
+    }
+
+    string scText(string text)
+    {
+        string r = "\\textsc{";
+        r += text;
+        r += "}";
+        return r;
+    }
+
+    string italicText(string text)
+    {
+        string r = "\\textit{";
+        r += text;
+        r += "}";
+        return r;
+    }
+
+    string setPageNumbering(PageNumberingType type)
+    {
+        string r = "\\pagenumbering{";
+
+        switch (type)
+        {
+        case PageNumberingType::Gobble:
+            r += "gobble";
+            break;
+        case PageNumberingType::Arabic:
+            r += "arabic";
+            break;
+        case PageNumberingType::Roman:
+            r += "roman";
+            break;
+        default:
+            r += "arabic";
+            break;
+        }
+
+        r += "}";
+        return r;
+    }
+
+    string makeTitle()
+    {
+        return "\\maketitle";
+    }
+
+    string newPage()
+    {
+        return "\\newpage";
+    }
+
+    string createTOS()
+    {
+        return "\\tableofcontents";
+    }
+
+    string newSection(string name)
+    {
+        return "\\section{" + name + "}";
+    }
+
+    string newSubSection(string name)
+    {
+        return "\\subsection{" + name + "}";
+    }
+
+    string newSubSubSection(string name)
+    {
+        return "\\subsubsection{" + name + "}";
+    }
+
+    string makeTableWithLabel(vector<vector<string>> data, vector<bool> hasHLines, string tableSettings, string tabularSettings, bool isCentered, string label, string id)
+    {
+        string r = "\\begin{table}[";
+        r += tableSettings;
+        r += "]\n";
+
+        if (isCentered)
+        {
+            r += "\\centering\n";
+        }
+
+        r += "\\begin{tabular}{";
+        r += tabularSettings;
+        r += "}\n";
+
+        for (int i = 0; i < (int)data.size(); i++)
+        {
+            for (int j = 0; j < (int)data[i].size(); j++)
+            {
+                r += data[i][j];
+
+                if (j < ((int)data[i].size() - 1))
+                {
+                    r += "&";
+                }
+            }
+
+            r += "\\\\";
+
+            if (hasHLines[i])
+            {
+                r += " \\hline";
+            }
+
+            r += "\n";
+        }
+
+        r += "\\end{tabular}\n";
+        
+        if (label != "")
+        {
+            r += "\\caption{";
+            r += label;
+            r += "}\n";
+        }
+
+        if (id != "")
+        {
+            r += "\\label{tab:";
+            r += id;
+            r += "}\n";
+        }
+
+        r += "\\end{table}";
+        return r;
+    }
+
+    string makeTable(vector<vector<string>> data, vector<bool> hasHLines, string tableSettings, string tabularSettings, bool isCentered)
+    {
+        return makeTableWithLabel(data, hasHLines, tableSettings, tabularSettings, isCentered, "", "");
+    }
+
+    string newEntry(string entry, string ipa, string grammar, string def, string refs, string xrefs, vector<string> tables)
+    {
+        string r = "\\entry{" + entry + "}{[" + ipa + "]}{" + grammar + "}{" + def + "}{" + refs + "}{" + xrefs + "}{";
+
+        for (int i = 0; i < (int)tables.size(); i++)
+        {
+            r += "\\ref{tab:";
+            r += tables[i];
+            r += "}";
+
+            if (i < ((int)tables.size() - 1))
+            {
+                r += ", ";
+            }
+        }
+
+        r += "}";
+        return r;
+    }
+
+    string newAdditionalEntry(int entryNum, string grammar, string def, string refs, string xrefs, vector<string> tables)
+    {
+        string r = "\\entry" + numToString(entryNum) + "{" + grammar + "}{" + def + "}{" + refs + "}{" + xrefs + "}{";
+
+        for (int i = 0; i < (int)tables.size(); i++)
+        {
+            r += "\\ref{tab:";
+            r += tables[i];
+            r += "}";
+
+            if (i < ((int)tables.size() - 1))
+            {
+                r += ", ";
+            }
+        }
+
+        r += "}";
+        return r;
+    }
+
+    string newPhrase(string phrase, string def, string ex)
+    {
+        return "\\phrase{" + phrase + "}{" + def + "}{" + ex + "}";
+    }
+
+    string newNote(string note)
+    {
+        return "\\note{" + note + "}";
+    }
+
+    string beginMulticols(int numCols)
+    {
+        char buffer[3];
+        _itoa_s(numCols, buffer, (size_t)3, 10);
+        return "\\begin{multicols}{" + string(buffer) + "}";
+    }
+
+    string endMulticols()
+    {
+        return "\\end{multicols}";
+    }
+
+    class Document
+    {
+    private:
+        DocumentType type;
+        FontSize fontSize;
+        vector<string> packages;
+        vector<LatexCommand> commands;
+        vector<string> packageSettings;
+        vector<string> docSettings;
+        string title;
+        string subtitle;
+        string author;
+        vector<string> docCommands;
+    public:
+        Document(DocumentType t)
+        {
+            type = t;
+            title = "";
+            subtitle = "";
+        }
+
+        Document(DocumentType t, int size, FontSizeType fst)
+        {
+            type = t;
+            fontSize.amount = size;
+            fontSize.unit = fst;
+        }
+        
+        void usePackage(string packageName)
+        {
+            packages.push_back(packageName);
+        }
+
+        void addCommand(string commandName, int argNum, vector<string> output)
+        {
+            commands.push_back(LatexCommand(commandName, argNum, output));
+        }
+
+        void setPkgSettings(string commandName, map<string, string> options)
+        {
+            string com = "\\";
+            com += commandName;
+            com += "{";
+
+            for (map<string, string>::iterator iter = options.begin(); iter != options.end(); iter++)
+            {
+                com += iter->first;
+                com += "=";
+                com += iter->second;
+                com += ",";
+            }
+
+            com += "}";
+            packageSettings.push_back(com);
+        }
+
+        void setDocumentSetting(string command)
+        {
+            docSettings.push_back(command);
+        }
+
+        void setTitle(string t)
+        {
+            title = t;
+        }
+
+        void setSubtitle(string s)
+        {
+            subtitle = s;
+        }
+
+        void setAuthor(string a)
+        {
+            author = a;
+        }
+
+        void setDocument(vector<string> dc)
+        {
+            docCommands = dc;
+        }
+
+        string toString()
+        {
+            string data = "";
+
+            // Setup document class
+            {
+                data += "\\documentclass";
+                
+                if (fontSize.unit == FontSizeType::None)
+                {
+                    data += "[11pt]";
+                }
+                else
+                {
+                    data += "[";
+                    char buffer[3];
+                    _itoa_s(fontSize.amount, buffer, (size_t)3, 10);
+                    data += string(buffer);
+                    
+                    switch (fontSize.unit)
+                    {
+                    case FontSizeType::Point:
+                        data += "pt";
+                        break;
+                    default:
+                        data += "pt";
+                        break;
+                    }
+
+                    data += "]";
+                }
+
+                switch (type)
+                {
+                case DocumentType::Article:
+                    data += "{article}";
+                    break;
+                default:
+                    data += "{article}";
+                    break;
+                }
+
+                data += "\n";
+            }
+
+            // Add packages
+            {
+                for (string package : packages)
+                {
+                    data += "\\usepackage{";
+                    data += package;
+                    data += "}\n";
+                }
+            }
+
+            // Add commands
+            {
+                for (LatexCommand command : commands)
+                {
+                    data += "\\newcommand{\\";
+                    data += command.name;
+                    data += "}[";
+                    char buffer[3];
+                    _itoa_s(command.argNum, buffer, (size_t)3, 10);
+                    data += buffer;
+                    data += "]{";
+                    
+                    for (string output : command.output)
+                    {
+                        data += output;
+                    }
+
+                    data += "}\n";
+                }
+            }
+
+            // Add package settings
+            {
+                for (string pkgCom : packageSettings)
+                {
+                    data += pkgCom;
+                    data += "\n";
+                }
+            }
+
+            // Add document settings
+            {
+                for (string docSetting : docSettings)
+                {
+                    data += docSetting;
+                    data += "\n";
+                }
+            }
+
+            // Add preamble
+            {
+                data += "\\title{";
+                data += title;
+                data += "\\\\\n\t\\large ";
+                data += subtitle;
+                data += "}\n";
+                data += "\\author{";
+                data += author;
+                data += "}\n";
+            }
+
+            // Begin document
+            {
+                data += "\\begin{document}\n";
+            }
+
+            // Add body of document
+            {
+                for (string command : docCommands)
+                {
+                    data += command;
+                    data += "\n";
+                }
+            }
+
+            // End document
+            {
+                data += "\\end{document}";
+            }
+
+            return data;
+        }
+    };
 }
 
-string parseLangData(Document& doc)
+string parseLangData(Document& jDoc)
 {
-    string beginning = "\\documentclass[12pt]{article}\n\\usepackage{fullpage}\n\\usepackage{color}\n\n\\newcommand{\\entry}[7]{\\markboth{#1}{#1}\\textbf{#1} \\ \\textipa{#2}\\ \\textsuperscript{1}\\textsc{#3}. \\ {#4}\\ \\textit{#5}\\ see also: \\textit{#6}. \\ {#7}}\n\\newcommand{\\entrytwo}[5]{; \\textsuperscript{2}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrythree}[5]{; \\textsuperscript{3}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfour}[5]{; \\textsuperscript{4}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entryfive}[5]{; \\textsuperscript{5}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\entrysix}[5]{; \\textsuperscript{6}\\textsc{#1} \\ {#2} \\ \\textit{#3} \\ see also: \\textit{#4}. \\ {#5}}\n\\newcommand{\\phrase}[3]{; \\textbf{#1} \\ {#2} \\textit{#3}}\n\\newcommand{\\note}[1]{; \\textbf{note}: {#1}}\n\\newcommand{\\sentence}[2]{\\textsuperscript{#1}{#2}}\n\n\\usepackage{vowel}\n\n\\usepackage{hyperref}\n\\hypersetup{\n\tcolorlinks=true,\n\tlinkcolor=blue,\n\tfilecolor=magenta,\n\turlcolor=cyan,\n}\n\n\\usepackage{tipa}\n\n\\usepackage{graphicx}\n\n\\usepackage{amssymb}\n\\let\\oldemptyset\\emptyset\n\\let\\emptyset\\varnothing\n\n\\usepackage{multicol}\n\n\\usepackage{expex}\n\n\\setlength{\\parindent}{0cm}\n\n\\usepackage{microtype}\n\n";
+    Latex::Document doc(Latex::DocumentType::Article, 12, Latex::FontSizeType::Point);
+    doc.usePackage("fullpage");
+    doc.usePackage("color");
 
-    string documentTitle = doc["documentTitle"].GetString();
-    string documentSubtitle = "", documentAuthor = "";
-
-    if (doc.HasMember("documentSubtitle"))
+    // Add commands
     {
-        documentSubtitle = doc["documentSubtitle"].GetString();
+        doc.addCommand(
+            "entry",
+            7,
+            {
+                Latex::markBoth(Latex::comArg(1), Latex::comArg(1)),
+                Latex::boldText(Latex::comArg(1)), 
+                " \\ ",
+                Latex::ipaText(Latex::comArg(2)),
+                "\\ ",
+                Latex::superScript("1"),
+                Latex::scText(Latex::comArg(3)),
+                ". \\ {",
+                Latex::comArg(4),
+                "}\\ ",
+                Latex::italicText(Latex::comArg(5)),
+                "\\ see also: ",
+                Latex::italicText(Latex::comArg(6)),
+                ". \\ {",
+                Latex::comArg(7),
+                "}"
+            }
+        );
+        doc.addCommand(
+            "entrytwo",
+            5,
+            {
+                "; ",
+                Latex::superScript("2"),
+                Latex::scText(Latex::comArg(1)),
+                " \\ {",
+                Latex::comArg(2),
+                "} \\ ",
+                Latex::italicText(Latex::comArg(3)),
+                " \\ see also: ",
+                Latex::italicText(Latex::comArg(4)),
+                ". \\ {",
+                Latex::comArg(5),
+                "}"
+            }
+        );
+        doc.addCommand(
+            "entrythree",
+            5,
+            {
+                "; ",
+                Latex::superScript("3"),
+                Latex::scText(Latex::comArg(1)),
+                " \\ {",
+                Latex::comArg(2),
+                "} \\ ",
+                Latex::italicText(Latex::comArg(3)),
+                " \\ see also: ",
+                Latex::italicText(Latex::comArg(4)),
+                " \\ {",
+                Latex::comArg(5),
+                "}"
+            }
+        );
+        doc.addCommand(
+            "entryfour",
+            5,
+            {
+                "; ",
+                Latex::superScript("4"),
+                Latex::scText(Latex::comArg(1)),
+                " \\ {",
+                Latex::comArg(2),
+                "} \\ ",
+                Latex::italicText(Latex::comArg(3)),
+                " \\ see also: ",
+                Latex::italicText(Latex::comArg(4)),
+                " \\ {",
+                Latex::comArg(5),
+                "}"
+            }
+        );
+        doc.addCommand(
+            "entryfive",
+            5,
+            {
+                "; ",
+                Latex::superScript("5"),
+                Latex::scText(Latex::comArg(1)),
+                " \\ {",
+                Latex::comArg(2),
+                "} \\ ",
+                Latex::italicText(Latex::comArg(3)),
+                " \\ see also: ",
+                Latex::italicText(Latex::comArg(4)),
+                " \\ {",
+                Latex::comArg(5),
+                "}"
+            }
+        );
+        doc.addCommand(
+            "entrysix",
+            5,
+            {
+                "; ",
+                Latex::superScript("6"),
+                Latex::scText(Latex::comArg(1)),
+                " \\ {",
+                Latex::comArg(2),
+                "} \\ ",
+                Latex::italicText(Latex::comArg(3)),
+                " \\ see also: ",
+                Latex::italicText(Latex::comArg(4)),
+                " \\ {",
+                Latex::comArg(5),
+                "}"
+            }
+        );
+        doc.addCommand(
+            "phrase",
+            3,
+            {
+                "; ",
+                Latex::boldText(Latex::comArg(1)),
+                " \\ {",
+                Latex::comArg(2),
+                "} ",
+                Latex::italicText(Latex::comArg(3))
+            }
+        );
+        doc.addCommand(
+            "note",
+            1,
+            {
+                "; ",
+                Latex::boldText("note"),
+                ": {",
+                Latex::comArg(1),
+                "}"
+            }
+        );
+    }
+    doc.usePackage("hyperref");
+    doc.setPkgSettings(
+        "hypersetup",
+        {
+            {"colorlinks", "true"},
+            {"linkcolor", "blue"},
+            {"filecolor", "magenta"},
+            {"urlcolor", "cyan"}
+        }
+    );
+    doc.usePackage("tipa");
+    doc.usePackage("graphicx");
+    doc.usePackage("multicol");
+    doc.usePackage("expex");
+    doc.setDocumentSetting("\\setlength{\\parindent}{0cm}");
+    doc.usePackage("microtype");
+    doc.setTitle(jDoc["documentTitle"].GetString());
+
+    if (jDoc.HasMember("documentSubtitle"))
+    {
+        doc.setSubtitle(jDoc["documentSubtitle"].GetString());
     }
 
-    if (doc.HasMember("author"))
+    if (jDoc.HasMember("author"))
     {
-        documentAuthor = doc["author"].GetString();
+        doc.setAuthor(jDoc["author"].GetString());
     }
 
-    string preamble = "\\title{\n\t" + documentTitle + "\\\\\n\t\\large " + documentSubtitle + "}\n\\author{" + documentAuthor + "}\n\n";
+    GenericArray<false, rapidjson::Value> langs = jDoc["langs"].GetArray();
 
-    GenericArray<false, rapidjson::Value> langs = doc["langs"].GetArray();
-    string docBegin = "\\begin{document}\n\t\\pagenumbering{gobble}\n\t\\maketitle\n\t\\newpage\n\n\t\\pagenumbering{roman}\n\t\\tableofcontents\n\t\\newpage\n\n\t\\pagenumbering{arabic}\n";
-    vector<string> langStrings;
+    vector<string> commands;
+    commands.push_back(Latex::setPageNumbering(Latex::PageNumberingType::Gobble));
+    commands.push_back(Latex::makeTitle());
+    commands.push_back(Latex::newPage());
+    commands.push_back(Latex::setPageNumbering(Latex::PageNumberingType::Roman));
+    commands.push_back(Latex::createTOS());
+    commands.push_back(Latex::newPage());
+    commands.push_back(Latex::setPageNumbering(Latex::PageNumberingType::Arabic));
 
     for (Value* iter = langs.Begin(); iter != langs.End(); ++iter)
     {
-        string langString = "";
+        vector<string> langComms;
         GenericObject<false, rapidjson::Value> lang = iter->GetObject();
         string name = lang["name"].GetString();
         string engName = lang["engName"].GetString();
         GenericArray<false, rapidjson::Value> abbrevs = lang["abbrevs"].GetArray();
 
-        langString += ("\t\\section{" + name + " (" + engName + ")}\n\t\t\\subsection{" + name + "-English Dictionary}\n\t\t\t\\subsubsection{Abbreviations}\n\t\t\t\t\\begin{table}[ht]\n\t\t\t\t\t\\centering\n\t\t\t\t\t\\begin{tabular}{r|l}\n");
+        langComms.push_back(Latex::newSection(name + " (" + engName + ")"));
+        langComms.push_back(Latex::newSubSection(name + "-English Dictionary"));
+        langComms.push_back(Latex::newSubSubSection("Abbreviations"));
+        
+        vector<vector<string>> aTableData;
+        vector<bool> aHasHLines;
 
-        // Parse abbrevs
         for (Value* aIter = abbrevs.Begin(); aIter != abbrevs.End(); ++aIter)
         {
+            vector<string> aRow;
             GenericObject<false, rapidjson::Value> abbrev = aIter->GetObject();
-            string aAbbrev = abbrev["abbrev"].GetString();
-            string aLong = abbrev["long"].GetString();
-            langString += ("\t\t\t\t\t\t\\textsc{" + aAbbrev + "} & " + aLong + " \\\\\n");
+            aRow.push_back(abbrev["abbrev"].GetString());
+            aRow.push_back(abbrev["long"].GetString());
+            aTableData.push_back(aRow);
+            aHasHLines.push_back(false);
         }
 
-        langString += ("\t\t\t\t\t\\end{tabular}\n\t\t\t\t\\end{table}\n\t\t\t\\subsubsection{Format of Entries}\n\t\t\t\t\\entry{entry}{[ipa]}{grammar}{definition}{references}{crossrefs}{tables} \\entrytwo{grammar}{definition}{references}{crossrefs}{tables} \\entrythree{grammar}{definition}{references}{crossrefs}{tables} \\entryfour{grammar}{definition}{references}{crossrefs}{tables} \\entryfive{grammar}{definition}{references}{crossrefs}{tables} \\entrysix{grammar}{definition}{references}{crossrefs}{tables} \\phrase{phrase}{definition}{example} \\note{note}\n\t\t\t\\newpage\n\t\t\t\\begin{multicols}{2}\n");
+        langComms.push_back(Latex::makeTable(aTableData, aHasHLines, "ht", "r|l", true));
+        langComms.push_back(Latex::newSubSubSection("Format of Entries"));
+        langComms.push_back(Latex::newEntry("entry", "ipa", "grammar", "definition", "references", "crossrefs", {"tables"}) + " " + Latex::newAdditionalEntry(2, "grammar", "definition", "references", "crossrefs", {"tables"}) + " " + Latex::newAdditionalEntry(3, "grammar", "definition", "references", "crossrefs", {"tables"}) + " " + Latex::newAdditionalEntry(4, "grammar", "definition", "references", "crossrefs", {"tables"}) + " " + Latex::newAdditionalEntry(5, "grammar", "definition", "references", "crossrefs", {"tables"}) + " " + Latex::newAdditionalEntry(6, "grammar", "definition", "references", "crossrefs", {"tables"}) + " " + Latex::newPhrase("phrase", "definition", "example") + " " + Latex::newNote("note"));
+        langComms.push_back(Latex::newPage());
+        langComms.push_back(Latex::beginMulticols(2));
 
         GenericArray<false, rapidjson::Value> dictionary = lang["dictionary"].GetArray();
-
-        // Parse dictionary
         vector<DictEntry> entries;
-        
+
         for (Value* wIter = dictionary.Begin(); wIter != dictionary.end(); ++wIter)
         {
             DictEntry entry;
@@ -163,97 +808,102 @@ string parseLangData(Document& doc)
         }
 
         sort(entries.begin(), entries.end(), [](const DictEntry& a, const DictEntry& b)->bool {
-            return a.word < b.word;
+            string aTemp = a.word;
+            string bTemp = b.word;
+
+            transform(aTemp.begin(), aTemp.end(), aTemp.begin(), [](char& ch)->int {
+                return tolower(ch);
+            });
+
+            transform(bTemp.begin(), bTemp.end(), bTemp.begin(), [](char& ch)->int {
+                return tolower(ch);
+            });
+
+            return aTemp < bTemp;
         });
 
-        char currentStartingChar = '\0';
-        map<string, pair<string, string>> engToLang;
+        char csc = '\0';
+        vector<pair<string, pair<string, string>>> englishData;
 
         for (vector<DictEntry>::iterator deIter = entries.begin(); deIter != entries.end(); deIter++)
         {
-            if (deIter->word[0] != currentStartingChar)
+            if (tolower(deIter->word[0]) != csc)
             {
-                langString += ("\t\t\t\t\\subsubsection{" + string(1, toupper(deIter->word[0])) + "}\n");
-                currentStartingChar = deIter->word[0];
+                langComms.push_back(Latex::newSubSubSection(string(1, toupper(deIter->word[0]))));
+                csc = deIter->word[0];
             }
 
-            langString += ("\t\t\t\t\t\\entry{" + deIter->word + "}{[" + deIter->pronunciaton + "]}{" + deIter->entries[0].tos + "}{" + deIter->entries[0].definition + "}{" + deIter->entries[0].references + "}{" + deIter->entries[0].crossrefs + "}{");
-
-            for (int i = 0; i < (int)deIter->entries[0].tables.size(); i++)
-            {
-                langString += ("\\ref{tab:" + deIter->entries[0].tables[i] + "}");
-
-                if (i < ((int)deIter->entries[0].tables.size() - 1))
-                {
-                    langString += ",";
-                }
-            }
-
-            langString += "} ";
-            engToLang.insert(pair<string, pair<string, string>>(deIter->entries[0].engTrans, pair<string, string>(deIter->word, deIter->entries[0].tos)));
+            langComms.push_back(Latex::newEntry(deIter->word, deIter->pronunciaton, deIter->entries[0].tos, deIter->entries[0].definition, deIter->entries[0].references, deIter->entries[0].crossrefs, deIter->entries[0].tables));
+            englishData.push_back(pair<string, pair<string, string>>(deIter->entries[0].engTrans, pair<string, string>(deIter->word, deIter->entries[0].tos)));
 
             for (int i = 1; i < (int)deIter->entries.size(); i++)
             {
-                string num = numToString(i + 1);
-                langString += ("\\entry" + num + " {" + deIter->entries[i].tos + "}{" + deIter->entries[i].definition + "}{" + deIter->entries[i].references + "}{" + deIter->entries[i].crossrefs + "}{");
-
-                for (int j = 0; j < (int)deIter->entries[i].tables.size(); j++)
-                {
-                    langString += ("\\ref{tab:" + deIter->entries[i].tables[j] + "}");
-
-                    if (j < ((int)deIter->entries[i].tables.size() - 1))
-                    {
-                        langString += ", ";
-                    }
-                }
-
-                langString += "} ";
-                engToLang.insert(pair<string, pair<string, string>>(deIter->entries[i].engTrans, pair<string, string>(deIter->word, deIter->entries[i].tos)));
+                langComms.push_back(Latex::newAdditionalEntry(i + 1, deIter->entries[i].tos, deIter->entries[i].definition, deIter->entries[i].references, deIter->entries[i].crossrefs, deIter->entries[i].tables));
+                englishData.push_back(pair<string, pair<string, string>>(deIter->entries[i].engTrans, pair<string, string>(deIter->word, deIter->entries[i].tos)));
             }
 
-            langString += "\n\n";
+            langComms.push_back("\n");
         }
 
-        langString += ("\t\t\t\\end{multicols}\n\t\t\\newpage\n\t\t\\subsection{English-" + name + " Dictionary}\n\t\t\t\\begin{multicols}{2}\n");
-        currentStartingChar = '\0';
-        vector<pair<string, pair<string, string>>> engToLangSorted = sortMapByKey<string, pair<string, string>>(engToLang);
+        langComms.push_back(Latex::endMulticols());
+        langComms.push_back(Latex::newPage());
+        langComms.push_back(Latex::newSubSection("English-" + name + " Dictionary"));
+        langComms.push_back(Latex::beginMulticols(2));
+        csc = '\0';
+        
+        sort(englishData.begin(), englishData.end(), [](const pair<string, pair<string, string>>& a, const pair<string, pair<string, string>>& b)->bool {
+            string aTemp = a.first;
+            string bTemp = b.first;
 
-        for (vector<pair<string, pair<string, string>>>::iterator etlIter = engToLangSorted.begin(); etlIter != engToLangSorted.end(); etlIter++)
+            transform(aTemp.begin(), aTemp.end(), aTemp.begin(), [](char& ch)->int {
+                return tolower(ch);
+            });
+
+            transform(bTemp.begin(), bTemp.end(), bTemp.begin(), [](char& ch)->int {
+                return tolower(ch);
+            });
+
+            return aTemp < bTemp;
+        });
+
+        for (vector<pair<string, pair<string, string>>>::iterator edIter = englishData.begin(); edIter != englishData.end(); edIter++)
         {
-            if (etlIter->first[0] != currentStartingChar)
+            if (tolower(edIter->first[0]) != csc)
             {
-                langString += ("\t\t\t\t\\subsubsection{" + string(1, toupper(etlIter->first[0])) + "}\n");
-                currentStartingChar = etlIter->first[0];
+                langComms.push_back(Latex::newSubSubSection(string(1, toupper(edIter->first[0]))));
+                csc = edIter->first[0];
             }
 
-            langString += ("\t\t\t\t\t\\entry{" + etlIter->first + "}{}{" + etlIter->second.second + "}{" + etlIter->second.first + "}{}{}{}\n\n");
+            langComms.push_back(Latex::newEntry(edIter->first, "", edIter->second.second, edIter->second.first, "", "", {}) + "\n");
         }
 
-        langString += ("\t\t\t\\end{multicols}\n\t\t\\newpage\n\t\t\\subsection{Grammar Tables}\n");
-
+        langComms.push_back(Latex::endMulticols());
+        langComms.push_back(Latex::newPage());
+        langComms.push_back(Latex::newSubSection("Grammar Tables"));
+        
         GenericArray<false, rapidjson::Value> tables = lang["tables"].GetArray();
 
-        // Parse tables
         for (Value* table = tables.Begin(); table != tables.End(); ++table)
         {
-            langString += ("\t\t\t\t\\begin{table}[ht]\n\t\t\t\t\t\\centering\n\t\t\t\t\t\\begin{tabular}{");
+            vector<vector<string>> gTableData;
+            vector<bool> gHasHLines;
             GenericObject<false, rapidjson::Value> tableObj = table->GetObject();
             string tableName = tableObj["name"].GetString();
             string id = tableObj["id"].GetString();
-            vector<string> rowLabels;
+            vector<string> rowLabels, colLabels;
             GenericArray<false, rapidjson::Value> tColLabels = tableObj["colLabels"].GetArray(), tRowLabels = tableObj["rowLabels"].GetArray(), rows = tableObj["rows"].GetArray();
             string colStyles = tableObj["colStyles"].GetString();
-            langString += (colStyles + "}\n\t\t\t\t\t\t");
+            colLabels.push_back("");
 
             for (Value* colLabel = tColLabels.Begin(); colLabel != tColLabels.End(); ++colLabel)
             {
-                string label = colLabel->GetString();
-                langString += (" & " + label);
+                colLabels.push_back(colLabel->GetString());
             }
 
-            langString += (" \\\\ \\hline\n");
+            gTableData.push_back(colLabels);
+            gHasHLines.push_back(true);
 
-            for (Value* rowLabel = tRowLabels.begin(); rowLabel != tRowLabels.End(); ++rowLabel)
+            for (Value* rowLabel = tRowLabels.Begin(); rowLabel != tRowLabels.End(); ++rowLabel)
             {
                 rowLabels.push_back(rowLabel->GetString());
             }
@@ -262,32 +912,27 @@ string parseLangData(Document& doc)
 
             for (Value* r = rows.Begin(); r != rows.End(); ++r)
             {
-                langString += ("\t\t\t\t\t\t" + rowLabels[i++]);
+                vector<string> rowData;
+                rowData.push_back(rowLabels[i++]);
                 GenericArray<false, rapidjson::Value> row = r->GetArray();
 
                 for (Value* rr = row.Begin(); rr != row.End(); ++rr)
                 {
-                    string data = rr->GetString();
-                    langString += (" & " + data);
+                    rowData.push_back(rr->GetString());
                 }
 
-                langString += " \\\\\n";
+                gTableData.push_back(rowData);
+                gHasHLines.push_back(false);
             }
 
-            langString += ("\t\t\t\t\t\\end{tabular}\n\t\t\t\t\t\\caption{" + tableName + "}\n\t\t\t\t\t\\label{tab:" + id + "}\n\t\t\t\t\\end{table}\n");
+            langComms.push_back(Latex::makeTableWithLabel(gTableData, gHasHLines, "ht", colStyles, true, tableName, id));
         }
 
-        langStrings.push_back(langString);
+        commands.insert(commands.end(), langComms.begin(), langComms.end());
     }
 
-    string langString = "";
-
-    for (string ls : langStrings)
-    {
-        langString += ls;
-    }
-
-    return beginning + preamble + docBegin + langString + "\\end{document}";
+    doc.setDocument(commands);
+    return doc.toString();
 }
 
 int main(int argc, char* argv[])

@@ -166,6 +166,114 @@
                                 "rows"
                             ]
                         }
+                    },
+                    "addAfter": {
+                        "description": "Text to add after the dictionary and grammar tables",
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "sectionName": {
+                                    "description": "The name of the section",
+                                    "type": "string"
+                                },
+                                "sectionData": {
+                                    "description": "The data of the section",
+                                    "type": "array",
+                                    "items": [
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "subSectionName": {
+                                                    "description": "The name of the sub-section",
+                                                    "type": "string"
+                                                },
+                                                "sectionBody": {
+                                                    "description": "The body of the section",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "subSectionName",
+                                                "sectionBody"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "subSectionName": {
+                                                    "description": "The name of the sub-section",
+                                                    "type": "string"
+                                                },
+                                                "sectionBody": {
+                                                    "description": "The body of the section",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "string"
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "subSectionName",
+                                                "sectionBody"
+                                            ]
+                                        },
+                                        {
+                                            "type": "object",
+                                            "properties": {
+                                                "subSectionName": {
+                                                    "description": "The name of the sub-section",
+                                                    "type": "string"
+                                                },
+                                                "interlinearData": {
+                                                    "description": "The list of interlinear sentences",
+                                                    "type": "array",
+                                                    "items": {
+                                                        "type": "object",
+                                                        "properties": {
+                                                            "transText": {
+                                                                "description": "A translation of the text into English",
+                                                                "type": "string"
+                                                            },
+                                                            "langText": {
+                                                                "description": "The text in the language",
+                                                                "type": "string"
+                                                            },
+                                                            "englishText": {
+                                                                "description": "The text in English",
+                                                                "type": "string"
+                                                            },
+                                                            "posText": {
+                                                                "description": "The text as part of speech data",
+                                                                "type": "array",
+                                                                "items": {
+                                                                    "type": "string"
+                                                                }
+                                                            }
+                                                        },
+                                                        "required": [
+                                                            "langText",
+                                                            "englishText",
+                                                            "posText"
+                                                        ]
+                                                    }
+                                                }
+                                            },
+                                            "required": [
+                                                "subSectionName",
+                                                "interlinearData"
+                                            ]
+                                        }
+                                    ]
+                                }
+                            },
+                            "required": [
+                                "sectionName"
+                            ]
+                        }
                     }
                 },
                 "required": [
