@@ -882,6 +882,7 @@ string parseLangData(Document& jDoc)
         langComms.push_back(Latex::newSubSection("Grammar Tables"));
         
         GenericArray<false, rapidjson::Value> tables = lang["tables"].GetArray();
+        int tableNum = 0;
 
         for (Value* table = tables.Begin(); table != tables.End(); ++table)
         {
@@ -926,6 +927,78 @@ string parseLangData(Document& jDoc)
             }
 
             langComms.push_back(Latex::makeTableWithLabel(gTableData, gHasHLines, "ht", colStyles, true, tableName, id));
+
+            if (((tableNum + 1) % 3) == 0)
+            {
+                langComms.push_back(Latex::newPage());
+            }
+
+            tableNum += 1;
+        }
+
+        if (lang.HasMember("addAfter"))
+        {
+            langComms.push_back(Latex::newPage());
+            GenericArray<false, rapidjson::Value> addAfter = lang["addAfter"].GetArray();
+
+            for (Value* aaIter = addAfter.Begin(); aaIter != addAfter.End(); ++aaIter)
+            {
+                GenericObject<false, rapidjson::Value> afterObj = aaIter->GetObject();
+                langComms.push_back(Latex::newSubSection(afterObj["sectionName"].GetString()));
+                GenericArray<false, rapidjson::Value> sectionData = afterObj["sectionData"].GetArray();
+                GenericObject<false, rapidjson::Value> englishData = sectionData[0].GetObject(), langData = sectionData[1].GetObject(), interData = sectionData[2].GetObject();
+                langComms.push_back(Latex::newSubSubSection(englishData["subSectionName"].GetString()));
+                GenericArray<false, rapidjson::Value> englishBody = englishData["sectionBody"].GetArray();
+
+                for (Value* ebIter = englishBody.Begin(); ebIter != englishBody.End(); ++ebIter)
+                {
+                    langComms.push_back(ebIter->GetString());
+                    langComms.push_back("\n");
+                }
+
+                langComms.push_back(Latex::newSubSubSection(langData["subSectionName"].GetString())); // Before this
+                GenericArray<false, rapidjson::Value> langBody = langData["sectionBody"].GetArray();
+
+                for (Value* lbIter = langBody.Begin(); lbIter != langBody.End(); ++lbIter)
+                {
+                    langComms.push_back(lbIter->GetString());
+                    langComms.push_back("\n");
+                }
+
+                langComms.push_back(Latex::newSubSubSection(interData["subSectionName"].GetString()));
+                GenericArray<false, rapidjson::Value> interBody = interData["interlinearData"].GetArray();
+
+                for (Value* ibIter = interBody.Begin(); ibIter != interBody.End(); ++ibIter)
+                {
+                    GenericObject<false, rapidjson::Value> ibData = ibIter->GetObject();
+                    langComms.push_back("\\ex");
+                    langComms.push_back("\\begingl");
+                    langComms.push_back("% " + string(ibData["transText"].GetString()));
+                    langComms.push_back("\\gla " + string(ibData["langText"].GetString()) + "//");
+                    langComms.push_back("\\glb " + string(ibData["englishText"].GetString()) + "//");
+                    string pos = "\\glc ";
+                    GenericArray<false, rapidjson::Value> posData = ibData["posText"].GetArray();
+                    int i = 0;
+
+                    for (Value* posdIter = posData.Begin(); posdIter != posData.End(); ++posdIter)
+                    {
+                        pos += "\\tiny{\\sc ";
+                        pos += posdIter->GetString();
+                        pos += "}";
+
+                        if (i < ((int)posData.Size() - 1))
+                        {
+                            pos += " ";
+                        }
+
+                        i += 1;
+                    }
+
+                    langComms.push_back(pos + "//");
+                    langComms.push_back("\\endgl");
+                    langComms.push_back("\\xe");
+                }
+            }
         }
 
         commands.insert(commands.end(), langComms.begin(), langComms.end());

@@ -255,6 +255,7 @@
                                                             }
                                                         },
                                                         "required": [
+                                                            "transText",
                                                             "langText",
                                                             "englishText",
                                                             "posText"
@@ -271,7 +272,8 @@
                                 }
                             },
                             "required": [
-                                "sectionName"
+                                "sectionName",
+                                "sectionData"
                             ]
                         }
                     }
