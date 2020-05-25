@@ -38,6 +38,10 @@
 *.tex
 *.synctex.gz
 *.pdf
+*.toc
+*.log
+*.dvi
+*.aux
 
 # Language Files
 *.lang.json
